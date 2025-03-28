@@ -420,12 +420,12 @@ PROMPT_DICT = {
     ),
 }
 PROMPT_DICT = {
-    "prompt_with_input": (
+    "qa_prompt_with_input": (
         "Below is an instruction that describes a task, paired with an input that provides further context. "
         "Write a response that appropriately completes the request.\n\n"
         "### Question: {question}\n\n### Answer: {answer}\n"
     ),
-    "prompt_without_input": (
+    "qa_prompt_without_input": (
         "Below is an instruction that describes a task. "
         "Write a response that appropriately completes the request.\n\n"
         "### Question: {question}\n\n### Answer: {answer}\n"
@@ -459,8 +459,8 @@ def create_question_answer_prompts(examples):
     prompts["target"] = []   
     for example in examples:
         prompt_template = (
-            PROMPT_DICT["prompt_with_input"] if example.get("question", "") != "" 
-            else PROMPT_DICT["prompt_without_input"]
+            PROMPT_DICT["qa_prompt_with_input"] if example.get("question", "") != "" 
+            else PROMPT_DICT["qa_prompt_without_input"]
         )
         source = prompt_template.format(
             question=example["question"],
@@ -723,7 +723,7 @@ def main():
                 raw_datasets[key] = raw_datasets[key].rename_column(
                     data_args.answer_column_name, "answer" if data_args.sql_prompt else "answer"
                 )
-            if create_question_answer_prompts:
+            if data_args.create_question_answer_prompts:
                 prompts = create_question_answer_prompts(raw_datasets[key])
             elif data_args.chat_prompt:
                 prompts = create_chat_prompts(raw_datasets[key], tokenizer)
