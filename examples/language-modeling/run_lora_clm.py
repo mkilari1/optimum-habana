@@ -305,6 +305,21 @@ class DataArguments:
             "'output' column is used for non-SQL prompts and the 'answer' column is used for SQL prompts."
         },
     )
+    question_column_name: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Name of the column in the dataset that optionally provides context or input for the task. By "
+            "default, the 'input' column is used for non-SQL prompts and the 'context' column is used for SQL prompts."
+        },
+    )
+    answer_column_name: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Name of the column in the dataset with the answer to the instruction. By default, the "
+            "'output' column is used for non-SQL prompts and the 'answer' column is used for SQL prompts."
+        },
+    )
+
 
 
 @dataclass
@@ -404,6 +419,18 @@ PROMPT_DICT = {
         "### Instruction:\n{instruction}\n\n### Response:"
     ),
 }
+PROMPT_DICT = {
+    "prompt_with_input": (
+        "Below is an instruction that describes a task, paired with an input that provides further context. "
+        "Write a response that appropriately completes the request.\n\n"
+        "### Question: {question}\n\n### Answer: {answer}\n"
+    ),
+    "prompt_without_input": (
+        "Below is an instruction that describes a task. "
+        "Write a response that appropriately completes the request.\n\n"
+        "### Question: {question}\n\n### Answer: {answer}\n"
+    ),
+}
 
 SQL_PROMPT = (
     "You are a text-to-SQL model. Your job is to answer questions about a database. "
@@ -424,6 +451,25 @@ def create_prompts(examples):
         source = prompt_template.format_map(example)
         prompts["source"].append(source)
         prompts["target"].append(example["output"])
+    return prompts
+
+def create_question_answer_prompts(examples):
+    prompts = {}
+    prompts["source"] = []
+    prompts["target"] = []   
+    for example in examples:
+        prompt_template = (
+            PROMPT_DICT["prompt_with_input"] if example.get("question", "") != "" 
+            else PROMPT_DICT["prompt_without_input"]
+        )
+        source = prompt_template.format(
+            question=example["question"],
+            answer=example["answer"]
+        )
+        
+        prompts["source"].append(source)
+        prompts["target"].append(example["answer"])
+    
     return prompts
 
 
@@ -669,8 +715,17 @@ def main():
                 raw_datasets[key] = raw_datasets[key].rename_column(
                     data_args.output_column_name, "answer" if data_args.sql_prompt else "output"
                 )
-
-            if data_args.chat_prompt:
+            if data_args.question_column_name:
+                raw_datasets[key] = raw_datasets[key].rename_column(
+                    data_args.question_column_name, "question" if data_args.sql_prompt else "question"
+                )
+            if data_args.answer_column_name:
+                raw_datasets[key] = raw_datasets[key].rename_column(
+                    data_args.answer_column_name, "answer" if data_args.sql_prompt else "answer"
+                )
+            if create_question_answer_prompts:
+                prompts = create_question_answer_prompts(raw_datasets[key])
+            elif data_args.chat_prompt:
                 prompts = create_chat_prompts(raw_datasets[key], tokenizer)
             elif data_args.sql_prompt:
                 prompts = create_sql_prompts(raw_datasets[key])
