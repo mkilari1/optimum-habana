@@ -321,7 +321,6 @@ class DataArguments:
     )
 
 
-
 @dataclass
 class FinetuneArguments:
     """
@@ -419,18 +418,20 @@ PROMPT_DICT = {
         "### Instruction:\n{instruction}\n\n### Response:"
     ),
 }
+
 PROMPT_DICT = {
-    "qa_prompt_with_input": (
+    "prompt_with_input": (
         "Below is an instruction that describes a task, paired with an input that provides further context. "
         "Write a response that appropriately completes the request.\n\n"
         "### Input:\n{input}\n\n### Question: {question}\n\n### Answer: {answer}\n"
     ),
-    "qa_prompt_without_input": (
+    "prompt_without_input": (
         "Below is an instruction that describes a task. "
         "Write a response that appropriately completes the request.\n\n"
         "### Question: {question}\n\n### Answer: {answer}\n"
     ),
 }
+
 
 SQL_PROMPT = (
     "You are a text-to-SQL model. Your job is to answer questions about a database. "
@@ -459,10 +460,10 @@ def create_question_answer_prompts(examples):
     prompts["target"] = []   
     for example in examples:
         prompt_template = (
-            PROMPT_DICT["qa_prompt_with_input"] if example.get("input", "") != "" 
-            else PROMPT_DICT["qa_prompt_without_input"]
+            PROMPT_DICT["prompt_with_input"] if example.get("input", "") != "" 
+            else PROMPT_DICT["prompt_without_input"]
         )
-        source = prompt_template.format_map(
+        source = prompt_template.format(
             input=example.get("input", ""),
             question=example["question"],
             answer=example["answer"]
@@ -724,7 +725,7 @@ def main():
                 raw_datasets[key] = raw_datasets[key].rename_column(
                     data_args.answer_column_name, "answer" if data_args.sql_prompt else "answer"
                 )
-            if data_args.create_question_answer_prompts:
+            if create_question_answer_prompts:
                 prompts = create_question_answer_prompts(raw_datasets[key])
             elif data_args.chat_prompt:
                 prompts = create_chat_prompts(raw_datasets[key], tokenizer)
