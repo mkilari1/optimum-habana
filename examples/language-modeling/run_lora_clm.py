@@ -423,7 +423,7 @@ PROMPT_DICT = {
     "prompt_with_input": (
         "Below is an instruction that describes a task, paired with an input that provides further context. "
         "Write a response that appropriately completes the request.\n\n"
-        "### Input:\n{input}\n\n### Question: {question}\n\n### Answer: {answer}\n"
+        "### ### Question: {question}\n\n### Answer: {answer}\n"
     ),
     "prompt_without_input": (
         "Below is an instruction that describes a task. "
@@ -464,7 +464,6 @@ def create_question_answer_prompts(examples):
             else PROMPT_DICT["prompt_without_input"]
         )
         source = prompt_template.format(
-            input=example.get("input", ""),
             question=example["question"],
             answer=example["answer"]
         )
